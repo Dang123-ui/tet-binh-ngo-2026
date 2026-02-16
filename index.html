@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tết Bính Ngọ 2026 - Chúc Mừng Năm Mới</title>
+    <style>
+      :root {
+        --gold: #ffcc00;
+        --deep-red: #a80000;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      body {
+        background: url("background.jpg") no-repeat center center fixed;
+        background-size: contain;
+        background-color: #8b0000;
+        height: 100vh;
+        margin: 0;
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .effect-layer {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        z-index: 99;
+      }
+
+      .effect-layer canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      .tree-container {
+        position: relative;
+        z-index: 5;
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: flex-end;
+        filter: drop-shadow(0 0 20px rgba(0, 0, 0, 0.5));
+        transform: scale(1.5);
+        transform-origin: bottom center;
+      }
+
+      @keyframes tree-sway {
+        from {
+          transform: rotate(-1deg);
+        }
+        to {
+          transform: rotate(1deg);
+        }
+      }
+
+      /* Lì xì */
+      @keyframes shake {
+        0% {
+          transform: scale(1.2) rotate(0deg) translateY(-8px);
+        }
+        25% {
+          transform: scale(1.2) rotate(4deg) translateY(-8px);
+        }
+        50% {
+          transform: scale(1.2) rotate(-4deg) translateY(-8px);
+        }
+        75% {
+          transform: scale(1.2) rotate(4deg) translateY(-8px);
+        }
+        100% {
+          transform: scale(1.2) rotate(0deg) translateY(-8px);
+        }
+      }
+
+      .envelope {
+        position: absolute;
+        width: 50px;
+        height: 100px;
+        background: url("bao.jpg") no-repeat center center;
+        background-size: cover;
+        background-color: #b71c1c;
+
+        border: 2px solid var(--deep-red);
+        border-radius: 4px;
+        cursor: pointer;
+        z-index: 20;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.55);
+        transition: box-shadow 0.2s ease-in-out;
+      }
+
+      .envelope:hover {
+        z-index: 30;
+        box-shadow: 0 0 20px var(--gold);
+        animation: shake 0.45s infinite;
+      }
+
+      /* Modal */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.85);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 100;
+        backdrop-filter: blur(5px);
+      }
+
+      .modal {
+        background: #fff;
+        background-image: linear-gradient(to bottom, #ffffff, #fff9c4);
+        width: 90%;
+        max-width: 520px;
+        padding: 38px;
+        border: 8px double var(--gold);
+        border-radius: 10px;
+        text-align: center;
+        transform: scale(0.8);
+        opacity: 0;
+        transition: all 0.35s ease;
+      }
+
+      .modal.show {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      .modal h2 {
+        color: #b71c1c;
+        font-size: 1.8rem;
+        margin-bottom: 18px;
+      }
+
+      .wish-text {
+        font-size: 1.25rem;
+        color: #333;
+        margin: 18px 0 22px;
+        font-style: italic;
+        line-height: 1.6;
+      }
+
+      .btn {
+        padding: 12px 22px;
+        border: none;
+        cursor: pointer;
+        font-weight: 700;
+        border-radius: 999px;
+        margin: 6px;
+        text-transform: uppercase;
+      }
+      .btn-close {
+        background: #b71c1c;
+        color: white;
+      }
+      .btn-again {
+        background: var(--gold);
+        color: #b71c1c;
+      }
+
+      @media (max-width: 768px) {
+        .tree-container {
+          transform: scale(1.2);
+        }
+        .envelope {
+          width: 40px;
+          height: 70px;
+        }
+      }
+    </style>
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+  </head>
+
+  <body>
+    <div class="effect-layer">
+      <canvas id="petalCanvas"></canvas>
+      <canvas id="fireworkCanvas"></canvas>
+    </div>
+
+    <div class="tree-container" id="treeContainer">
+      <lottie-player
+        src="flower.json"
+        background="transparent"
+        speed="1"
+        style="width: 100%; height: 100%; max-width: 600px; margin: 0 auto"
+        loop
+        autoplay
+      ></lottie-player>
+    </div>
+
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal" id="wishModal">
+        <h2>🧧 Cung Chúc Tân Xuân 🧧</h2>
+        <div class="wish-text" id="wishContent">...</div>
+        <div>
+          <button class="btn btn-again" onclick="getNewWish()">
+            Lấy Lộc Khác
+          </button>
+          <button class="btn btn-close" onclick="closeModal()">Đóng</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ===== Config tối ưu hiệu năng =====
+      const CONFIG = {
+        PETAL_COUNT: 42, // giảm từ 70 -> 42
+        FIREWORK_RINGS: 3, // giảm từ 5 -> 3
+        FIREWORK_PER_RING: 38, // giảm từ 70 -> 38
+        FIREWORK_MAX_PARTICLES: 650, // giới hạn tổng hạt để không lag
+        AUTO_FIREWORK_MS: 2600, // thưa hơn 1400 -> 2600
+        SHADOW_BLUR: 8, // giảm 18 -> 8
+        TRAIL_FADE: 0.2, // đuôi vừa đủ
+        DPR_CAP: 1.5, // cap DPR để máy yếu đỡ lag (1.5 thay vì 2-3)
+      };
+
+      const wishes = [
+        "Chúc mừng năm mới: Công việc hanh thông, mã đáo thành công!",
+        "Sức khỏe dẻo dai, tinh thần vững vàng, cả năm rực rỡ!",
+        "Tài lộc vào nhà, chi tiêu thoải mái mà vẫn dư dả!",
+        "Học tập tấn tới: Học đâu hiểu đó, thi đâu đậu đó!",
+        "Gia đình sum vầy, bình an hạnh phúc suốt bốn mùa!",
+        "Sắc đẹp thăng hạng, tự tin tỏa sáng mỗi ngày!",
+        "Công việc suôn sẻ, gặp nhiều quý nhân nâng đỡ!",
+        "Tiền bạc rủng rỉnh, cơ hội tốt đến liên tục!",
+        "Sức khỏe đầy bình, ăn ngon ngủ ngon, vui vẻ an nhiên!",
+        "Bính Ngọ 2026: Vạn sự như ý, mọi điều hanh thông!",
+      ];
+      let queue = [...wishes];
+
+      const pCanvas = document.getElementById("petalCanvas");
+      const pCtx = pCanvas.getContext("2d", { alpha: true });
+
+      const fCanvas = document.getElementById("fireworkCanvas");
+      const fCtx = fCanvas.getContext("2d", { alpha: true });
+
+      const state = {
+        petals: [],
+        fireworks: [],
+        w: window.innerWidth,
+        h: window.innerHeight,
+        dpr: 1,
+      };
+
+      function resize() {
+        state.w = window.innerWidth;
+        state.h = window.innerHeight;
+
+        // cap DPR để giảm lag trên màn 2K/4K
+        state.dpr = Math.min(
+          CONFIG.DPR_CAP,
+          Math.max(1, window.devicePixelRatio || 1),
+        );
+
+        // set canvas pixel size
+        pCanvas.width = Math.floor(state.w * state.dpr);
+        pCanvas.height = Math.floor(state.h * state.dpr);
+        fCanvas.width = Math.floor(state.w * state.dpr);
+        fCanvas.height = Math.floor(state.h * state.dpr);
+
+        // scale context về đơn vị CSS px
+        pCtx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+        fCtx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+      }
+      window.addEventListener("resize", resize);
+      resize();
+
+      // ===== Petals =====
+      class Petal {
+        constructor() {
+          this.reset(true);
+        }
+        reset(initial = false) {
+          this.x = Math.random() * state.w;
+          this.y = initial ? Math.random() * state.h : -20;
+          this.size = Math.random() * 8 + 5;
+          this.speed = Math.random() * 1.2 + 0.8;
+          this.angle = Math.random() * Math.PI * 2;
+          this.spin = Math.random() * 0.04 - 0.02;
+          this.drift = Math.random() * 1.4 + 0.4;
+        }
+        update() {
+          this.y += this.speed;
+          this.x += Math.sin(this.y / 65) * this.drift;
+          this.angle += this.spin;
+          if (this.y > state.h + 30) this.reset(false);
+        }
+        draw() {
+          pCtx.save();
+          pCtx.translate(this.x, this.y);
+          pCtx.rotate(this.angle);
+          pCtx.beginPath();
+          pCtx.ellipse(0, 0, this.size, this.size / 2, 0, 0, Math.PI * 2);
+          pCtx.fillStyle = "#ffeb3b";
+          pCtx.fill();
+          pCtx.restore();
+        }
+      }
+      function initPetals() {
+        state.petals = [];
+        for (let i = 0; i < CONFIG.PETAL_COUNT; i++)
+          state.petals.push(new Petal());
+      }
+      initPetals();
+
+      // ===== Fireworks (tối ưu) =====
+      class FireworkParticle {
+        constructor(x, y, color) {
+          this.x = x;
+          this.y = y;
+          const a = Math.random() * Math.PI * 2;
+          const force = Math.random() * 9 + 5; // giảm lực => ít bay quá xa
+          this.vx = Math.cos(a) * force;
+          this.vy = Math.sin(a) * force;
+          this.color = color;
+          this.alpha = 1;
+          this.decay = Math.random() * 0.02 + 0.012;
+          this.gravity = 0.12;
+          this.friction = 0.95;
+          this.r = Math.random() * 1.8 + 3.2; // vừa to vừa nhẹ
+        }
+        update() {
+          this.vx *= this.friction;
+          this.vy = this.vy * this.friction + this.gravity;
+          this.x += this.vx;
+          this.y += this.vy;
+          this.alpha -= this.decay;
+        }
+        draw() {
+          // shadowBlur nhẹ thôi (rất tốn nếu lớn)
+          fCtx.save();
+          fCtx.globalAlpha = this.alpha;
+          fCtx.fillStyle = this.color;
+          fCtx.shadowBlur = CONFIG.SHADOW_BLUR;
+          fCtx.shadowColor = this.color;
+          fCtx.beginPath();
+          fCtx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+          fCtx.fill();
+          fCtx.restore();
+        }
+      }
+
+      function boom(x, y) {
+        // nếu quá nhiều hạt thì bỏ bớt để không lag
+        if (state.fireworks.length > CONFIG.FIREWORK_MAX_PARTICLES) {
+          state.fireworks.splice(
+            0,
+            state.fireworks.length - CONFIG.FIREWORK_MAX_PARTICLES,
+          );
+        }
+
+        const colors = [
+          "#FFD700",
+          "#FF3131",
+          "#00FF66",
+          "#00E5FF",
+          "#FFFFFF",
+          "#FF8C00",
+          "#FF00FF",
+        ];
+        for (let ring = 0; ring < CONFIG.FIREWORK_RINGS; ring++) {
+          const color = colors[(Math.random() * colors.length) | 0];
+          for (let i = 0; i < CONFIG.FIREWORK_PER_RING; i++) {
+            state.fireworks.push(new FireworkParticle(x, y, color));
+          }
+        }
+      }
+
+      // ===== Modal =====
+      function openModal() {
+        getNewWish();
+        const overlay = document.getElementById("modalOverlay");
+        overlay.style.display = "flex";
+        requestAnimationFrame(() =>
+          document.getElementById("wishModal").classList.add("show"),
+        );
+      }
+      function closeModal() {
+        document.getElementById("wishModal").classList.remove("show");
+        setTimeout(
+          () =>
+            (document.getElementById("modalOverlay").style.display = "none"),
+          350,
+        );
+      }
+      function getNewWish() {
+        if (queue.length === 0) queue = [...wishes];
+        const idx = Math.floor(Math.random() * queue.length);
+        document.getElementById("wishContent").innerText = queue.splice(
+          idx,
+          1,
+        )[0];
+      }
+
+      // ===== Treo lì xì =====
+      const tree = document.getElementById("treeContainer");
+      const pos = [
+        { t: 45, l: 42 },
+        { t: 38, l: 60 },
+        { t: 35, l: 78 },
+        { t: 55, l: 79 },
+        { t: 68, l: 25 },
+        { t: 44, l: 22 },
+        { t: 62, l: 38 },
+        { t: 62, l: 52 },
+        { t: 72, l: 60 },
+        { t: 65, l: 72 },
+        { t: 38, l: 52 },
+        { t: 40, l: 28 },
+      ];
+
+      pos.forEach((p) => {
+        const env = document.createElement("div");
+        env.className = "envelope";
+        env.style.top = p.t + "%";
+        env.style.left = p.l + "%";
+
+        env.onclick = (e) => {
+          const rect = fCanvas.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+
+          // nổ pháo hoa
+          boom(x, y);
+
+          // hiệu ứng "mở bao" nhẹ (không nặng)
+          env.animate(
+            [
+              { transform: "scale(1) rotate(0deg)" },
+              { transform: "scale(1.18) rotate(-5deg)" },
+              { transform: "scale(1) rotate(0deg)" },
+            ],
+            { duration: 380, easing: "ease-out" },
+          );
+
+          setTimeout(openModal, 220);
+        };
+
+        tree.appendChild(env);
+      });
+
+      // ===== Loop vẽ =====
+      function tick() {
+        // petals
+        pCtx.clearRect(0, 0, state.w, state.h);
+        for (const p of state.petals) {
+          p.update();
+          p.draw();
+        }
+
+        // fireworks trail (xóa dần)
+        fCtx.globalCompositeOperation = "destination-out";
+        fCtx.fillStyle = `rgba(0,0,0,${CONFIG.TRAIL_FADE})`;
+        fCtx.fillRect(0, 0, state.w, state.h);
+
+        // vẽ pháo hoa sáng
+        fCtx.globalCompositeOperation = "lighter";
+        for (let i = state.fireworks.length - 1; i >= 0; i--) {
+          const fw = state.fireworks[i];
+          fw.update();
+          fw.draw();
+          if (fw.alpha <= 0) state.fireworks.splice(i, 1);
+        }
+
+        requestAnimationFrame(tick);
+      }
+
+      window.addEventListener("load", () => {
+        tick();
+
+        // Auto pháo hoa (thưa + ít hạt)
+        setInterval(() => {
+          const x = Math.random() * state.w;
+          const y = Math.random() * (state.h * 0.35);
+          boom(x, y);
+        }, CONFIG.AUTO_FIREWORK_MS);
+      });
+    </script>
+  </body>
+</html>
